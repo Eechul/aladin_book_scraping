@@ -18,9 +18,9 @@ const getAuthor = ($element) => {
         }
 }
 
-async function crawlBooks(page) {
+async function crawlBooks(keyword, page) {
   try {
-    const url = `https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&KeyWord=%EC%97%AD%EB%9D%BD&KeyRecentPublish=0&OutStock=0&ViewType=Detail&SortOrder=11&CustReviewCount=0&CustReviewRank=0&KeyFullWord=%EC%97%AD%EB%9D%BD&KeyLastWord=%EC%97%AD%EB%9D%BD&CategorySearch=&chkKeyTitle=&chkKeyAuthor=&chkKeyPublisher=&chkKeyISBN=&chkKeyTag=&chkKeyTOC=&chkKeySubject=&ViewRowCount=50&SuggestKeyWord=&page=${page}`;
+    const url = `https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&KeyWord=${encodeURI(keyword)}&KeyRecentPublish=0&OutStock=0&ViewType=Detail&SortOrder=11&CustReviewCount=0&CustReviewRank=0&KeyFullWord=%EC%97%AD%EB%9D%BD&KeyLastWord=%EC%97%AD%EB%9D%BD&CategorySearch=&chkKeyTitle=&chkKeyAuthor=&chkKeyPublisher=&chkKeyISBN=&chkKeyTag=&chkKeyTOC=&chkKeySubject=&ViewRowCount=50&SuggestKeyWord=&page=${page}`;
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
 
@@ -84,15 +84,17 @@ async function crawlBookDetails(books) {
     return books;
 }
 
-const main = async () => {
+const main = async (keyword, maxPage) => {
     const result = []
-    const maxPage = 37
+    keyword = keyword.trim()
+    maxPage = Number(maxPage)
+
     for(let i=1; i<=maxPage; i++) {
-        console.log(`page: ${i}`)
+        console.log(`current page: ${i}, max page: ${maxPage}`)
         const books = await crawlBooks(i);
         await sleep(250);
 
-        const booksWithDetail = await crawlBookDetails(books);
+        const booksWithDetail = await crawlBookDetails(books)
 
         result.push(booksWithDetail.map((book, index) => {
             return book.bookName + " / " + book.author + " / " + book.price  + " / " + book.datePublished + " / " + book.isbn
@@ -109,4 +111,7 @@ const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-main();
+const keyword = process.argv[2]
+const page = process.argv[3]
+
+main(keyword, page);
